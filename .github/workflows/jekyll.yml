@@ -43,24 +43,18 @@ jobs:
       - name: Minify JS files
         run: |
           uglifyjs assets/js/plugins/jquery.greedy-navigation.js assets/js/_main.js assets/js/theme.js -c -m -o assets/js/main.min.js
-      - name: Enable GitHub Pages if not enabled
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          if gh api "repos/${{ github.repository }}/pages" > /dev/null 2>&1; then
-            echo "GitHub Pages is already enabled."
-          else
-            echo "GitHub Pages is not enabled. Attempting to enable it..."
-            gh api "repos/${{ github.repository }}/pages" --method POST -f build_type=workflow \
-              && echo "GitHub Pages enabled successfully." \
-              || echo "WARNING: Failed to enable GitHub Pages via the API."
-          fi
       - name: Configure GitHub Pages
         id: pages
         uses: actions/configure-pages@v6.0.0
         with:
-          # Enable GitHub Pages for the repository if it is not already enabled
+          # Attempt to enable GitHub Pages for the repository if it is not already enabled
           enablement: true
+        # Do not fail the build if Pages cannot be configured automatically (for
+        # example when the workflow token is not allowed to create the Pages site).
+        # The site is still built below, and it will be deployed automatically once
+        # Pages is enabled in the repository settings (Settings -> Pages ->
+        # Build and deployment -> Source: GitHub Actions).
+        continue-on-error: true
       - name: Build with Jekyll
         # Outputs to the './_site' directory by default
         run: bundle exec jekyll build --baseurl "${{ steps.pages.outputs.base_path }}"
